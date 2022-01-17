@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using Spine.Unity;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,16 +24,32 @@ public class Airplane_AirphaneMinigame : MonoBehaviour
     public Transform gunPoint;
     public GameObject bulletPrefab;
     private bool isShoot;
-    public bool isFly;
     public bool isDead;
     [SerializeField] Camera mainCamera;
     private float maxXCamera;
     private float maxYCamera;
 
+    public SkeletonAnimation anim;
+    [SpineAnimation] public string anim_Idle, anim_Thang, anim_Thua;
+
 
     private void Start()
     {
+        //anim.state.Complete += AnimComplete;
         Invoke(nameof(SetUpMap), 5.5f);
+    }
+
+    private void AnimComplete(Spine.TrackEntry trackEntry)
+    {
+        //if (trackEntry.Animation.Name == anim_BellRun)
+        //{
+        //    PlayAnim(anim, anim_Run, true);
+        //}
+    }
+
+    public void PlayAnim(SkeletonAnimation anim, string nameAnim, bool loop)
+    {
+        anim.state.SetAnimation(0, nameAnim, loop);
     }
 
     void SetUpMap()
@@ -41,7 +58,6 @@ public class Airplane_AirphaneMinigame : MonoBehaviour
         maxYCamera = mainCamera.ScreenToWorldPoint(new Vector2(Screen.width, Screen.height)).y;
         isHoldMouse = false;
         isShoot = true;
-        isFly = true;
         isDead = false;
         StartCoroutine(Shoot());
     }
@@ -68,25 +84,29 @@ public class Airplane_AirphaneMinigame : MonoBehaviour
     {
         isDead = true;
         transform.DOMove(new Vector2(transform.position.x + 2, transform.position.y - 14), 8);
-        Enemy_AirplaneMinigame.instance.StopAllCoroutines();
+        GetComponent<PolygonCollider2D>().enabled = false;
         Destroy(gameObject, 10);
+        GameController_AirplaneMinigame.instance.Lose();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if ((collision.CompareTag("Finish") || collision.CompareTag("Trash")) && !isDead)
+        if (!GameController_AirplaneMinigame.instance.isWin)
         {
-            if (collision.CompareTag("Finish"))
+            if ((collision.CompareTag("Finish") || collision.CompareTag("Trash")) && !isDead)
             {
-                Destroy(collision.gameObject);
+                if (collision.CompareTag("Finish"))
+                {
+                    Destroy(collision.gameObject);
+                }
+                isDead = true;
+                isShoot = false;
+                var colFX = Instantiate(colliderFX, gameObject.transform.position, Quaternion.identity);
+                Destroy(colFX, 0.5f);
+                OnDead();
             }
-            isDead = true;
-            isShoot = false;
-            isFly = false;
-            var colFX = Instantiate(colliderFX, gameObject.transform.position, Quaternion.identity);
-            Destroy(colFX, 0.5f);
-            OnDead();
         }
+
     }
 
 
@@ -94,13 +114,11 @@ public class Airplane_AirphaneMinigame : MonoBehaviour
     {
         if (!GameController_AirplaneMinigame.instance.isIntro)
         {
-            if (isFly)
+            if (!GameController_AirplaneMinigame.instance.isWin && !GameController_AirplaneMinigame.instance.isLose)
             {
                 if (Input.GetMouseButtonDown(0))
                 {
-
                     isHoldMouse = true;
-
                 }
                 if (Input.GetMouseButtonUp(0))
                 {
@@ -115,29 +133,6 @@ public class Airplane_AirphaneMinigame : MonoBehaviour
                 }
             }
         }
-
-        if (GameController_AirplaneMinigame.instance.isWin)
-        {
-            GameController_AirplaneMinigame.instance.isWin = false;
-            StopAllCoroutines();
-            isFly = false;
-            mainCamera.DOOrthoSize(3, 2f);
-            mainCamera.transform.DOMove(new Vector3(transform.position.x, transform.position.y, -10), 2f).OnComplete(() =>
-            {
-                mainCamera.transform.DOMove(new Vector3(0, 0, -10), 3f);
-                mainCamera.DOOrthoSize(7, 3f).SetEase(Ease.Linear).OnComplete(() =>
-                {
-                    transform.DOMove(new Vector3(transform.position.x + 30, -0.2f, 0), 5f);
-
-                });
-
-            });
-
-        }
-
-
-
-
     }
 
 }

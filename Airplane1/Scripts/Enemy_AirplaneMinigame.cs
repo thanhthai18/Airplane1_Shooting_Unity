@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using Spine.Unity;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,6 +28,9 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
     public bool isJump;
     public bool isEnd;
 
+    public SkeletonAnimation anim;
+    [SpineAnimation] public string anim_Idle, anim_LenXuong, anim_MoMieng, anim_NhayMat;
+
 
     private void Awake()
     {
@@ -40,6 +44,9 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
 
     private void Start()
     {
+        //anim.state.Complete += AnimComplete;
+        //PlayAnim(anim, anim_Idle, true);
+
         isEnd = false;
         isJump = true;
         isTempDangerous = true;
@@ -54,6 +61,20 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
 
         hpBar.max_hp = maxHeal;
         hpBar.current_hp = currentHeal;
+    }
+
+    private void AnimComplete(Spine.TrackEntry trackEntry)
+    {
+        //if (trackEntry.Animation.Name == anim_BellRun)
+        //{
+        //    PlayAnim(anim, anim_Run, true);
+        //}
+
+    }
+
+    public void PlayAnim(SkeletonAnimation anim, string nameAnim, bool loop)
+    {
+        anim.state.SetAnimation(0, nameAnim, loop);
     }
 
     void Jump()
@@ -77,19 +98,16 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
     void OnDead()
     {
         Airplane_AirphaneMinigame.instance.GetComponent<Collider2D>().enabled = false;
-        Invoke(nameof(DelayCallisWin), 2f);
+        GameController_AirplaneMinigame.instance.Win();
         hpBar.gameObject.SetActive(false);
+        GetComponent<PolygonCollider2D>().enabled = false;
+        GetComponent<SpriteRenderer>().DOFade(0, 4);
         transform.DOMoveY(transform.position.y - 5, 5).OnComplete(() =>
         {
             Destroy(gameObject);
-
         });
     }
 
-    void DelayCallisWin()
-    {
-        GameController_AirplaneMinigame.instance.isWin = true;
-    }
 
 
     private void Update()
@@ -109,7 +127,7 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
                 StopCoroutine(spawnBulletCorotine);
                 StopCoroutine(spawnMeteoriteCorotine);
             }
-            
+
 
         }
 
@@ -129,7 +147,6 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
             {
                 isJump = false;
                 Jump();
-
             }
         }
 
@@ -164,7 +181,7 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
         Instantiate(bulletEnemyPrefab, gunPoint.position, Quaternion.identity);
         while (isLevel1)
         {
-            yield return new WaitForSeconds(2);
+            yield return new WaitForSeconds(4);
             Instantiate(bulletEnemyPrefab, gunPoint.position, Quaternion.identity);
             if (levelEnemy == 2)
             {
@@ -174,14 +191,13 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
 
         while (isLevel2)
         {
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(2f);
             Instantiate(bulletEnemyPrefab, gunPoint.position, Quaternion.identity);
             if (levelEnemy == -1)
             {
                 isLevel2 = false;
             }
         }
-
     }
 
     IEnumerator SpawnMeteorite()
@@ -209,6 +225,40 @@ public class Enemy_AirplaneMinigame : MonoBehaviour
             }
         }
     }
+    // Fade shader material
+    //IEnumerator FadeAlphaToZero(Renderer renderer)
+    //{
+
+    //    Color endColor = new Color(startColor.r, startColor.g, startColor.b, 0);
+    //    float duration = 0.5f;
+
+    //    while (true)
+    //    {
+
+    //        for (int i = 0; i < renderer.materials.Length; i++)
+    //        {
+    //            float lerp = Mathf.PingPong(Time.time, duration) / duration;
+    //            renderer.materials[i].color = Color.Lerp(startColor, endColor, lerp);
+
+    //        }
+    //        yield return null;
+    //    }
+    //}
+    //IEnumerator Fade(Renderer renderer)
+    //{
+    //    StartCoroutine(coroutine);
+
+    //    yield return new WaitForSeconds(2.5f);
+    //    for (int i = 0; i < renderer.materials.Length; i++)
+    //    {
+    //        renderer.materials[i].color = startColor;
+    //    }
+
+    //    fade = false;
+    //    Debug.Log("Lose Fade");
+    //    StopCoroutine(coroutine);
+
+    //}
 
 
 

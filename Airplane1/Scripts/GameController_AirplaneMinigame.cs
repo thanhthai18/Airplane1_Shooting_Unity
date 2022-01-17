@@ -11,9 +11,11 @@ public class GameController_AirplaneMinigame : MonoBehaviour
     [SerializeField] private GameObject currBackGround;
     [SerializeField] private GameObject nextBackGround;
     [SerializeField] private Camera mainCamera;
+    public Airplane_AirphaneMinigame airplaneObj;
     private int isSpawnBG;
     public bool isIntro;
-    public bool isWin;
+    public bool isWin, isLose;
+    public float startSizeCamera;
 
     private void Awake()
     {
@@ -27,12 +29,15 @@ public class GameController_AirplaneMinigame : MonoBehaviour
 
     private void Start()
     {
+        startSizeCamera = mainCamera.orthographicSize;
+        SetSizeCamera();
+        mainCamera.orthographicSize = (3.0f / 7) * startSizeCamera;
         isWin = false;
         isIntro = true;
         if (isIntro)
         {
-            mainCamera.DOOrthoSize(7, 5);
-            mainCamera.transform.DOMove(new Vector3(0,0,-10), 5).OnComplete(() => { isIntro = false; });
+            mainCamera.DOOrthoSize(startSizeCamera, 3);
+            mainCamera.transform.DOMove(new Vector3(0, 0, -10), 5).OnComplete(() => { isIntro = false; });
         }
         isSpawnBG = 0;
         currBackGround = Instantiate(currBackGround, new Vector3(26.4f, 2.824244f, 0.417622f), Quaternion.identity);
@@ -47,8 +52,8 @@ public class GameController_AirplaneMinigame : MonoBehaviour
     }
 
     void DestroyBG()
-    {   
-        Destroy(currBackGround);        
+    {
+        Destroy(currBackGround);
         isSpawnBG = 0;
         currBackGround = nextBackGround;
     }
@@ -63,28 +68,41 @@ public class GameController_AirplaneMinigame : MonoBehaviour
         currBackGround.transform.DOMoveX(-100f, 47f).SetEase(Ease.Flash);
     }
 
-    public void EndGame()
+    public void Win()
     {
-        PopupManager.instance.ShowPopupEndMinigame(false);
+        isWin = true;
+        Debug.Log("Win");
+        StopAllCoroutines();
+        airplaneObj.StopAllCoroutines();
+        airplaneObj.GetComponent<PolygonCollider2D>().enabled = false;
+        mainCamera.DOOrthoSize((3.0f / 7) * startSizeCamera, 2f);
+        mainCamera.transform.DOMove(new Vector3(airplaneObj.transform.position.x, airplaneObj.transform.position.y, -10), 2f).OnComplete(() =>
+        {
+            mainCamera.transform.DOMove(new Vector3(0, 0, -10), 3f);
+            mainCamera.DOOrthoSize(startSizeCamera, 3f).SetEase(Ease.Linear).OnComplete(() =>
+            {
+                airplaneObj.transform.DOMove(new Vector3(transform.position.x + 30, -0.2f, 0), 5f);
+            });
+
+        });
+
     }
 
-    public void WinGame()
+    public void Lose()
     {
-        PopupManager.instance.ShowPopupEndMinigame(true);
+        isLose = true;
+        Debug.Log("Thua");
+        StopAllCoroutines();
     }
+
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            WinGame();
-        }
-
-        if(currBackGround.transform.position.x <= -50)
+        if (currBackGround.transform.position.x <= -50)
         {
             isSpawnBG++;
         }
-            
+
         if (isSpawnBG == 1)
         {
             //nextBackGround = Instantiate(currBackGround, new Vector3(-(currBackGround.transform.position.x - 5f), 2.824244f, 0.417622f), Quaternion.identity);
@@ -92,8 +110,8 @@ public class GameController_AirplaneMinigame : MonoBehaviour
             MoveNextBG();
             Invoke("DestroyBG", 12f);
             isSpawnBG++;
-        }      
+        }
     }
 
-    
+
 }
